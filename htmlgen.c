@@ -28,6 +28,7 @@ HtmlNode *make_node(char *name, bool must_close, HtmlNode *parent)
 {
     HtmlNode *node = malloc(sizeof(HtmlNode));
     node->name = name;
+    node->text = NULL;
     node->parent = parent;
     node->num_children = 0;
     node->num_attrs = 0;
@@ -39,6 +40,19 @@ HtmlNode *make_node(char *name, bool must_close, HtmlNode *parent)
     return node;
 }
 
+HtmlNode *push_node(HtmlDoc *root, char *name, bool must_close, HtmlNode *parent)
+{
+    HtmlNode *node = make_node(name, must_close, parent);
+    root->current = node;
+    return node;
+}
+
+HtmlNode *pop_node(HtmlDoc *root)
+{
+    root->current = root->current->parent;
+    return root->current;
+}
+
 void destroy_node(HtmlNode *node)
 {
     for (size_t i=0; i<node->num_children; ++i) {
@@ -48,7 +62,15 @@ void destroy_node(HtmlNode *node)
         free(node->attrs[i].name);
         free(node->attrs[i].value);
     }
+    if (node->text != NULL) {
+        free(node->text);
+    }
     free(node);
+}
+
+void destroy_doc(HtmlDoc *doc)
+{
+    destroy_node(doc->root);
 }
 
 void print_node(HtmlNode *node, int depth) 
@@ -63,6 +85,12 @@ void print_node(HtmlNode *node, int depth)
         printf(" %s=%s", attr.name, attr.value);
     }
     printf(">\n");
+    if (node->text != NULL) {
+        for (int i=0; i<depth; ++i) {
+            printf("\t");
+        }
+        printf("%s\n", node->text);
+    }
 
     for (size_t i=0; i<node->num_children; ++i) {
         print_node(node->children[i], depth+1);
@@ -91,6 +119,13 @@ void write_node(HtmlNode *node, FILE *fp, int depth)
         fputs(attr.value, fp);
     }
     fputs(">\n", fp);
+    if (node->text != NULL) {
+        for (int i=0; i<depth; ++i) {
+            fputc('\t', fp);
+        }
+        fputs(node->text, fp);
+        fputc('\n', fp);
+    }
 
     for (size_t i=0; i<node->num_children; ++i) {
         write_node(node->children[i], fp, depth+1);
@@ -103,4 +138,12 @@ void write_node(HtmlNode *node, FILE *fp, int depth)
         fputs(node->name, fp);
         fputs(">\n", fp);
     }
+}
+
+int write_doc(HtmlDoc *doc, FILE *fp)
+{
+    if (doc->root == NULL || fp == NULL) {
+        return 1;
+    }
+    write_node(doc->root, fp, 0);
 }
