@@ -4,6 +4,9 @@
 #define MAX_CHILDREN 255
 #define MAX_ATTRS 16
 
+#include <stdbool.h>
+#include <stdio.h>
+
 
 typedef struct HtmlAttribute {
     char *name;
@@ -25,6 +28,9 @@ typedef struct HtmlNode {
 
 typedef struct {
     HtmlNode *root;
+    HtmlNode *html;
+    HtmlNode *head;
+    HtmlNode *body;
     HtmlNode *current;
 } HtmlDoc;
 
@@ -32,6 +38,7 @@ typedef struct {
 void add_attribute(HtmlNode *node, char *name, char *value);
 void add_child(HtmlNode *node, HtmlNode *child);
 HtmlNode *make_node(char *name, bool must_close, HtmlNode *parent);
+HtmlDoc make_doc();
 void destroy_node(HtmlNode *node);
 void destroy_doc(HtmlDoc *doc);
 void print_node(HtmlNode *node, int depth);

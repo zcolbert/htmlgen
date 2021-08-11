@@ -40,6 +40,17 @@ HtmlNode *make_node(char *name, bool must_close, HtmlNode *parent)
     return node;
 }
 
+HtmlDoc make_doc()
+{
+    HtmlDoc doc;
+    doc.root = make_node("!DOCTYPE html", false, NULL);
+    doc.html = make_node("html", true, doc.root);
+    doc.head = make_node("head", true, doc.html);
+    doc.body = make_node("body", true, doc.html);
+    doc.current = doc.root;
+    return doc;
+}
+
 HtmlNode *push_node(HtmlDoc *root, char *name, bool must_close, HtmlNode *parent)
 {
     HtmlNode *node = make_node(name, must_close, parent);
