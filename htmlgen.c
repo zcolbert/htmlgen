@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,13 +25,34 @@ void add_child(HtmlNode *node, HtmlNode *child)
     node->children[node->num_children++] = child;
 }
 
-void set_node_text(HtmlNode *node, char* text) 
+int append_node_text(HtmlNode *node, char* text) 
 {
-    if (node->text && (strlen(node->text) < strlen(text)) ) {
-        free(node->text);
+    if (node->num_lines < MAX_LINES-1) {
+        char *buf = (char*)malloc((strlen(text)*sizeof(char))+1);
+        strcpy(buf, text);
+        node->text[node->num_lines++] = buf;
+        return 0;
     }
-    node->text = (char*)malloc((strlen(text)*sizeof(char))+1);
-    strcpy(node->text, text);
+    return 1;
+}
+
+int trim_node_text(HtmlNode *node)
+{
+    if (node->num_lines > 0)
+    {
+        free(node->text[node->num_lines - 1]);
+        node->num_lines--;
+        return 0;
+    }
+    return 1;
+}
+void clear_node_text(HtmlNode *node)
+{
+    while (node->num_lines > 0) {
+        free(node->text[node->num_lines - 1]);
+        node->num_lines--;
+    }
+    assert(node->num_lines == 0);
 }
 
 HtmlNode *make_node(char *name, bool must_close, HtmlNode *parent)
@@ -40,9 +62,9 @@ HtmlNode *make_node(char *name, bool must_close, HtmlNode *parent)
     HtmlTag tag = { name: name, closes: must_close, num_attrs: 0 };
     node->tag = tag;
 
-    node->text = NULL;
     node->parent = parent;
     node->num_children = 0;
+    node->num_lines = 0;
 
     if (parent != NULL) {
         add_child(parent, node);
@@ -69,9 +91,7 @@ void destroy_node(HtmlNode *node)
         free(node->tag.attrs[i].name);
         free(node->tag.attrs[i].value);
     }
-    if (node->text != NULL) {
-        free(node->text);
-    }
+    clear_node_text(node);
     free(node);
 }
 
@@ -92,11 +112,13 @@ void print_node(HtmlNode *node, int depth)
         printf(" %s=%s", attr.name, attr.value);
     }
     printf(">\n");
-    if (node->text != NULL) {
+    for (size_t i=0; i<node->num_lines; ++i)
+    {
         for (int i=0; i<depth; ++i) {
             printf("\t");
         }
-        printf("%s\n", node->text);
+        printf("%s\n", node->text[i]);
+
     }
 
     for (size_t i=0; i<node->num_children; ++i) {
@@ -126,11 +148,12 @@ void write_node(HtmlNode *node, FILE *fp, int depth)
         fputs(attr.value, fp);
     }
     fputs(">\n", fp);
-    if (node->text != NULL) {
+    for (size_t i=0; i<node->num_lines; ++i) 
+    {
         for (int i=0; i<depth; ++i) {
             fputc('\t', fp);
         }
-        fputs(node->text, fp);
+        fputs(node->text[i], fp);
         fputc('\n', fp);
     }
 
