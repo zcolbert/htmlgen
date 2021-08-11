@@ -14,15 +14,20 @@ typedef struct HtmlAttribute {
 } HtmlAttribute;
 
 
-typedef struct HtmlNode {
+typedef struct  {
     char *name;
+    bool closes;
+    HtmlAttribute attrs[MAX_ATTRS];
+    size_t num_attrs;
+} HtmlTag;
+
+
+typedef struct HtmlNode {
+    HtmlTag tag;
     char *text;
     struct HtmlNode *parent;
     struct HtmlNode *children[MAX_CHILDREN];
     size_t num_children;
-    HtmlAttribute attrs[MAX_ATTRS];
-    size_t num_attrs;
-    bool must_close;
 } HtmlNode;
 
 
@@ -42,6 +47,7 @@ HtmlDoc make_doc();
 void destroy_node(HtmlNode *node);
 void destroy_doc(HtmlDoc *doc);
 void print_node(HtmlNode *node, int depth);
+void set_node_text(HtmlNode *node, char *text);
 HtmlNode *push_node(HtmlDoc *root, char *name, bool must_close, HtmlNode *parent);
 HtmlNode *pop_node(HtmlDoc *root);
 void write_node(HtmlNode *node, FILE *fp, int depth);

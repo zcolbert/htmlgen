@@ -13,7 +13,7 @@ void add_attribute(HtmlNode *node, char *name, char *value)
     attr.value = malloc((sizeof(char)*strlen(value)+1));
     strcpy(attr.name, name);
     strcpy(attr.value, value);
-    node->attrs[node->num_attrs++] = attr;
+    node->tag.attrs[node->tag.num_attrs++] = attr;
 }
 
 void add_child(HtmlNode *node, HtmlNode *child)
@@ -24,15 +24,27 @@ void add_child(HtmlNode *node, HtmlNode *child)
     node->children[node->num_children++] = child;
 }
 
+void set_node_text(HtmlNode *node, char* text) 
+{
+    if (node->text && (strlen(node->text) < strlen(text)) ) {
+        puts("freed");
+        free(node->text);
+    }
+    node->text = (char*)malloc((strlen(text)*sizeof(char))+1);
+    strcpy(node->text, text);
+    printf("%s\n", node->text);
+}
+
 HtmlNode *make_node(char *name, bool must_close, HtmlNode *parent)
 {
     HtmlNode *node = malloc(sizeof(HtmlNode));
-    node->name = name;
+
+    HtmlTag tag = { name: name, closes: must_close, num_attrs: 0 };
+    node->tag = tag;
+
     node->text = NULL;
     node->parent = parent;
     node->num_children = 0;
-    node->num_attrs = 0;
-    node->must_close = must_close;
 
     if (parent != NULL) {
         add_child(parent, node);
@@ -69,9 +81,9 @@ void destroy_node(HtmlNode *node)
     for (size_t i=0; i<node->num_children; ++i) {
         destroy_node(node->children[i]);
     }
-    for (size_t i=0; i<node->num_attrs; ++i) {
-        free(node->attrs[i].name);
-        free(node->attrs[i].value);
+    for (size_t i=0; i<node->tag.num_attrs; ++i) {
+        free(node->tag.attrs[i].name);
+        free(node->tag.attrs[i].value);
     }
     if (node->text != NULL) {
         free(node->text);
@@ -89,10 +101,10 @@ void print_node(HtmlNode *node, int depth)
     for (int i=0; i<depth-1; ++i) {
         printf("\t");
     }
-    printf("<%s", node->name);
-    for (size_t i=0; i<node->num_attrs; ++i)
+    printf("<%s", node->tag.name);
+    for (size_t i=0; i<node->tag.num_attrs; ++i)
     {
-        HtmlAttribute attr = node->attrs[i];
+        HtmlAttribute attr = node->tag.attrs[i];
         printf(" %s=%s", attr.name, attr.value);
     }
     printf(">\n");
@@ -106,11 +118,11 @@ void print_node(HtmlNode *node, int depth)
     for (size_t i=0; i<node->num_children; ++i) {
         print_node(node->children[i], depth+1);
     }
-    if (node->must_close) {
+    if (node->tag.closes) {
         for (int i=0; i<depth-1; ++i) {
             printf("\t");
         }
-        printf("</%s>\n", node->name);
+        printf("</%s>\n", node->tag.name);
     }
 }
 
@@ -120,10 +132,10 @@ void write_node(HtmlNode *node, FILE *fp, int depth)
         fputc('\t', fp);
     }
     fputc('<', fp);
-    fputs(node->name, fp);
-    for (size_t i=0; i<node->num_attrs; ++i)
+    fputs(node->tag.name, fp);
+    for (size_t i=0; i<node->tag.num_attrs; ++i)
     {
-        HtmlAttribute attr = node->attrs[i];
+        HtmlAttribute attr = node->tag.attrs[i];
         fputc(' ', fp);
         fputs(attr.name, fp);
         fputc('=', fp);
@@ -141,12 +153,12 @@ void write_node(HtmlNode *node, FILE *fp, int depth)
     for (size_t i=0; i<node->num_children; ++i) {
         write_node(node->children[i], fp, depth+1);
     }
-    if (node->must_close) {
+    if (node->tag.closes) {
         for (int i=0; i<depth-1; ++i) {
             fputc('\t', fp);
         }
         fputs("</", fp);
-        fputs(node->name, fp);
+        fputs(node->tag.name, fp);
         fputs(">\n", fp);
     }
 }
