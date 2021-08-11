@@ -27,12 +27,10 @@ void add_child(HtmlNode *node, HtmlNode *child)
 void set_node_text(HtmlNode *node, char* text) 
 {
     if (node->text && (strlen(node->text) < strlen(text)) ) {
-        puts("freed");
         free(node->text);
     }
     node->text = (char*)malloc((strlen(text)*sizeof(char))+1);
     strcpy(node->text, text);
-    printf("%s\n", node->text);
 }
 
 HtmlNode *make_node(char *name, bool must_close, HtmlNode *parent)
@@ -59,21 +57,7 @@ HtmlDoc make_doc()
     doc.html = make_node("html", true, doc.root);
     doc.head = make_node("head", true, doc.html);
     doc.body = make_node("body", true, doc.html);
-    doc.current = doc.root;
     return doc;
-}
-
-HtmlNode *push_node(HtmlDoc *root, char *name, bool must_close, HtmlNode *parent)
-{
-    HtmlNode *node = make_node(name, must_close, parent);
-    root->current = node;
-    return node;
-}
-
-HtmlNode *pop_node(HtmlDoc *root)
-{
-    root->current = root->current->parent;
-    return root->current;
 }
 
 void destroy_node(HtmlNode *node)

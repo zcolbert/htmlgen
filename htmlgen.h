@@ -48,8 +48,6 @@ void destroy_node(HtmlNode *node);
 void destroy_doc(HtmlDoc *doc);
 void print_node(HtmlNode *node, int depth);
 void set_node_text(HtmlNode *node, char *text);
-HtmlNode *push_node(HtmlDoc *root, char *name, bool must_close, HtmlNode *parent);
-HtmlNode *pop_node(HtmlDoc *root);
 void write_node(HtmlNode *node, FILE *fp, int depth);
 int write_doc(HtmlDoc *doc, FILE *fp);
 
